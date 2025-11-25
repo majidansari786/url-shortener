@@ -1,12 +1,9 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const shortenedModel = require('./shortened');
-mongoose.connect('mongodb://localhost:27017/urlShortener')
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
-
+const shortenedModel = require('./models/shortened');
 const app = express();
+const connectDB = require('./config/db');
 
+connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
