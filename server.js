@@ -1,9 +1,7 @@
 const express = require('express');
-const shortenedModel = require('./models/shortened');
 const app = express();
 const connectDB = require('./config/db');
 const { default: mongoose } = require('mongoose');
-const userModel = require('./models/user');
 const userRoute = require('./routers/userRoute')
 const shortenRoute = require('./routers/shortnerRoute')
 

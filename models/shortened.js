@@ -8,6 +8,9 @@ const shortenedSchema = new mongoose.Schema({
     Shortened: {
         type: String,
         required: true
+    },
+    createdby: {
+        type: String
     }
 })
 
