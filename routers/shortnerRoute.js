@@ -3,6 +3,7 @@ const router = express.Router()
 const shortnerController = require("../controllers/shortnerController")
 
 router.post('/shorten',shortnerController.shorten)
+router.post('/shortenwgen',shortnerController.qrgen)
 router.get("/:url",shortnerController.urlredirect)
 
 module.exports = router;

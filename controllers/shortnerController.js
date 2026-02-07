@@ -1,4 +1,5 @@
 const shortenedModel = require('../models/shortened')
+const QRCode = require('qrcode');
 
 async function urlredirect(req,res) {
     try{
@@ -39,7 +40,19 @@ async function shorten(req,res) {
     }
 }
 
+async function qrgen(req, res) {
+    try {
+        const { url } = req.body;
+        const qrcode = await QRCode.toDataURL(url, { type: "image/png" });
+        return res.json({ qrcode });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+}
+
+
 module.exports = {
     urlredirect,
-    shorten
+    shorten,
+    qrgen
 }
