@@ -7,10 +7,19 @@ const shortenedSchema = new mongoose.Schema({
     },
     Shortened: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     createdby: {
         type: String
+    },
+    expiresAt: {
+        type: Date,
+        default: null
+    },
+    visiters: {
+        type: Number,
+        default: null
     }
 })
 
