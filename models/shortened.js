@@ -19,7 +19,7 @@ const shortenedSchema = new mongoose.Schema({
     },
     visiters: {
         type: Number,
-        default: null
+        default: 0
     }
 })
 
