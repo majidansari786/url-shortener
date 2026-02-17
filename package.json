@@ -11,12 +11,20 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "express-validator": "^7.3.1",
     "expressjs": "^1.0.1",
-    "mongoose": "^9.0.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.0",
     "nanoid": "^5.1.6",
     "nodemon": "^3.1.11",
     "pg": "^8.18.0",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "xss-clean": "^0.1.4"
   }
 }

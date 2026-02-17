@@ -3,6 +3,13 @@ const app = express();
 const connectDB = require('./config/db');
 const userRoute = require('./routers/userRoute')
 const shortenRoute = require('./routers/shortnerRoute')
+const helmet = require('helmet')
+const cookieParser = require("cookie-parser");
+
+app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(helmet());
 
 const startServer = async () => {
     await connectDB();
