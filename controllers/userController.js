@@ -1,44 +1,51 @@
 const userModel = require('../models/user')
+const pgdb = require('../config/db')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
 async function register(req,res) {
     try {
-        const {firstname,Lastname,email,password} = req.body;
-        const isalready = await userModel.findOne({email: email})
-        if(isalready){
-            return res.status(409).json({error:"Email already exist"})
-        }
+        const {firstname,lastname,email,password} = req.body;
         const hashedpass = await bcrypt.hash(password,10)
-        const newuser = new userModel({
-            firstname: firstname,
-            Lastname: Lastname,
-            email: email,
-            password: hashedpass
-        });
-        await newuser.save();
-        return res.send("User created successfully");
-        }catch(err){
-            res.status(500).send("Server error");
-            console.log(err)
-        }
+        const query = `insert into users (firstname,lastname,email,password)
+        values($1,$2,$3,$4)
+        RETURNING id, firstname, lastname, email
+        `;
+        const values = [firstname,lastname,email,hashedpass];
+        const { rows } = await pgdb.query(query,values)
+        return res.status(200).json({sucess:"User created successfully",user: rows[0]});
+        }catch (err) {
+        if (err.code === '23505') {
+         return res.status(409).json({
+        error: "Email already exists"
+      });
+    }
+
+    console.error(err);
+    return res.status(500).json({
+      error: "Server error"
+    });
+  }
 }
 
 async function login(req, res) {
   try {
     const { email, password } = req.body;
-    const finduser = await userModel.findOne({ email });
-
-    if (!finduser) {
-      return res.status(404).json({ error: "User not found" });
+    const query = `select * from users where email = $1`
+    const {rows} = await pgdb.query(query,[email]);
+    if (rows.length === 0) {
+      return res.status(401).json({
+        error: "Invalid email or password"
+      });
     }
 
-    const matching = await bcrypt.compare(password, finduser.password);
+    const user = rows[0];
+    const matching = await bcrypt.compare(password, user.password);
     if (!matching) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
-    const payload = { id: finduser._id, email: finduser.email };
+    const payload = { id: user.id, email: user.email };
 
     const accessToken = jwt.sign(payload, process.env.Access_secret_key, { expiresIn: "4h" });
     const refreshToken = jwt.sign(payload, process.env.Refresh_secret_key, { expiresIn: "7d" });
@@ -69,15 +76,21 @@ async function login(req, res) {
 async function forgetpass(req,res){
     try{
         const {email, newpass} = req.body;
-        const findemail = await userModel.findOneAndUpdate(
-            {email: email},
-            {$set:{password: newpass}},
-            {new: true}
-        );
-        if(!findemail){
-            return res.status(404).json({error:"Email not found"});
-        }
-        return res.status(200).json({success:"Password reset successfull"})
+        if(!email || !newpass)(
+          res.json({Error:"email and new password not provided"}).status(401)
+        )
+        const query = `update users set password = $1 where email = $2 RETURNING id, firstname, lastname, email`
+        const hashedpass = await bcrypt.hash(newpass,10)
+        const values = [hashedpass,email]
+        const {rows} = await pgdb.query(query,[hashedpass,email])
+        if (rows.length === 0) {
+          return res.status(401).json({
+          error: "Invalid email or password"
+        });
+      }
+      return res.status(200).json({
+      success: "Password reset successful"
+    });  
     }catch(err){
         return res.json(err);
     }

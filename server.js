@@ -1,18 +1,18 @@
 const express = require('express');
 const app = express();
-const connectDB = require('./config/db');
 const userRoute = require('./routers/userRoute')
 const shortenRoute = require('./routers/shortnerRoute')
 const helmet = require('helmet')
 const cookieParser = require("cookie-parser");
+const apiLimiter = require('./middleware/rate-limit')
 
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
+app.use(apiLimiter)
 
 const startServer = async () => {
-    await connectDB();
     
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));

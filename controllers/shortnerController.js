@@ -1,40 +1,42 @@
 const shortenedModel = require('../models/shortened')
 const QRCode = require('qrcode');
 const { nanoid } = require('nanoid');
+const pgdb = require('../config/db')
 
-async function urlredirect(req,res) {
-    try{
-        const { url } = req.params;
-        const findurl = await shortenedModel.findOne({Shortened: url});
-        if(!findurl){
-            return res.status(404).send('URL not found');
-        }
-        if (findurl.expiresAt && findurl.expiresAt < new Date()) {
-            return res.status(410).send("This URL has expired");
-        }
-        await shortenedModel.findOneAndUpdate( { Shortened: url }, { $inc: { visiters: 1 } } );
-        return res.redirect(findurl.original);
-    }catch(err){
-        console.error('Redirect error:', err);
-        return res.status(500).send('Server error: ' + err.message);
+async function urlredirect(req, res) {
+  try {
+    const { code } = req.params;
+
+    const query = `
+      UPDATE shorten
+      SET visitors = visitors + 1
+      WHERE shortcode = $1
+      RETURNING original
+    `;
+
+    const { rows } = await pgdb.query(query, [code]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Short URL not found" });
     }
+
+    return res.redirect(rows[0].original);
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
+  }
 }
+
 
 async function shorten(req, res) {
   try {
-    const { url, email: createdby, expiresAt } = req.body;
-
+    const { url, email } = req.body;
     const shortenedUrl = nanoid(5);
-    const newshortened = new shortenedModel({
-      original: url,
-      Shortened: shortenedUrl,
-      createdby: createdby || null,
-      expiresAt: expiresAt ? new Date(expiresAt) : null
-    });
-    await newshortened.save();
+    const query =  `insert into shorten(original,shortcode,created_by) values($1,$2,$3) RETURNING id,original,shortcode,created_by`
+    const {rows}=await pgdb.query(query,[url,shortenedUrl,email])
     return res.json({
-      shortenedUrl,
-      expiresAt: newshortened.expiresAt
+      shortenedUrl
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
