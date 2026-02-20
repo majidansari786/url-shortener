@@ -6,15 +6,26 @@ const jwt = require('jsonwebtoken')
 async function register(req,res) {
     try {
         const {firstname,lastname,email,password} = req.body;
-        const hashedpass = await bcrypt.hash(password,10)
+        const hashedpass = await bcrypt.hash(password,10);
         const query = `insert into users (firstname,lastname,email,password)
         values($1,$2,$3,$4)
         RETURNING id, firstname, lastname, email
         `;
         const values = [firstname,lastname,email,hashedpass];
-        const { rows } = await pgdb.query(query,values)
-        return res.status(200).json({sucess:"User created successfully",user: rows[0]});
-        }catch (err) {
+        const { rows } = await pgdb.query(query,values);
+        const user = rows[0];
+        const payload = { id: user.id, email: user.email };
+        const refreshToken = jwt.sign(payload,process.env.Refresh_secret_key,{expiresIn: '7d'});
+        const uquery = `update users set refreshToken=$1 where email=$2`
+        const row1 = await pgdb.query(uquery,[refreshToken,email]);
+        return res.
+        cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "Lax",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        }).status(200).json({sucess:"User created successfully",user: rows[0]});
+      }catch (err) {
         if (err.code === '23505') {
          return res.status(409).json({
         error: "Email already exists"
@@ -46,10 +57,10 @@ async function login(req, res) {
     }
 
     const payload = { id: user.id, email: user.email };
-
     const accessToken = jwt.sign(payload, process.env.Access_secret_key, { expiresIn: "4h" });
     const refreshToken = jwt.sign(payload, process.env.Refresh_secret_key, { expiresIn: "7d" });
-
+    const q2 = `update users set refreshToken=$1 where email=$2`;
+    const row1 = await pgdb.query(q2,[refreshToken,user.email])
     res
       .cookie("userAccessToken", accessToken, {
         httpOnly: true,
