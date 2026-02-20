@@ -6,11 +6,12 @@
     <title>Login Page</title>
   </head>
   <body>
-    <form action="http://localhost:3000/api/user/login" method="post">
+    <h1>Url shortener</h1>
+    <form action="http://localhost:3000/api/url/shorten" method="post">
+      <label for="url">Url: </label>
+      <input type="url" name="url" id="url" required />
       <label for="email">Email: </label>
       <input type="email" name="email" id="email" />
-      <label for="password">Password: </label>
-      <input type="password" name="password" id="password" required />
       <button type="submit">Submit</button>
     </form>
   </body>
