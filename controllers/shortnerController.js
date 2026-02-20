@@ -6,7 +6,6 @@ const pgdb = require('../config/db')
 async function urlredirect(req, res) {
   try {
     const { code } = req.params;
-
     const query = `
       UPDATE shorten
       SET visitors = visitors + 1
@@ -19,7 +18,6 @@ async function urlredirect(req, res) {
     if (rows.length === 0) {
       return res.status(404).json({ error: "Short URL not found" });
     }
-
     return res.redirect(rows[0].original);
 
   } catch (err) {

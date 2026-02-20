@@ -7,6 +7,6 @@ const validateRequest = require('../middleware/validateRequest')
 
 router.post('/shorten',auth,validateShorten,validateRequest,shortnerController.shorten)
 router.post('/shortenwgen',auth,shortnerController.qrgen)
-router.get("/:url",shortnerController.urlredirect)
+router.get("/:code",shortnerController.urlredirect)
 
 module.exports = router;
