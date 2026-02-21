@@ -27,7 +27,22 @@ async function urlredirect(req, res) {
 
 async function shorten(req, res) {
   try {
-    const { url, email } = req.body;
+    const { url, custom_short, email } = req.body;
+    if (custom_short) {
+      try {
+        const query = `insert into shorten(original,shortcode,created_by) values($1,$2,$3) RETURNING id,original,shortcode,created_by`;
+        const { rows } = await pgdb.query(query, [url, custom_short, email]);
+        return res.json({
+          custom_short,
+        });
+      } catch (err) {
+        if (err.code === "23505") {
+          return res.status(409).json({
+            error: "Shorten code already exists",
+          });
+        }
+      }
+    }
     const shortenedUrl = nanoid(5);
     const query = `insert into shorten(original,shortcode,created_by) values($1,$2,$3) RETURNING id,original,shortcode,created_by`;
     const { rows } = await pgdb.query(query, [url, shortenedUrl, email]);
