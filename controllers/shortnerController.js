@@ -63,8 +63,8 @@ async function qrgen(req, res) {
   }
 }
 
-async function bulk_shorten(req,res) {
-  const { url } = req.body; 
+async function bulk_shorten(req, res) {
+  const { url } = req.body;
 }
 
 module.exports = {

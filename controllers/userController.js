@@ -5,14 +5,46 @@ const transport = require("../config/mail");
 const { nanoid } = require("nanoid");
 
 async function sendOtp(userEmail, otp) {
-  await transport.sendMail({
-    from: process.env.GMAIL,
-    to: userEmail,
-    subject: "Email verification code: "+ otp,
-    text: "Welcome Sir!" + otp,
-    html: "<h1>Otp: !</h1>" + otp,
-  });
-  console.log('Otp sent.')
+  try {
+    await transport.sendMail({
+      from: process.env.GMAIL,
+      to: userEmail,
+      subject: `Your Email Verification Code: ${otp}`,
+      text: `Welcome!\n\nYour verification code is: ${otp}\n\nThis code will expire shortly.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background:#f9f9f9; padding:40px;">
+          <div style="max-width:400px; margin:auto; background:#ffffff; padding:30px; border-radius:12px; border:1px solid #e0e0e0; text-align:center;">
+            
+            <h2 style="margin-bottom:20px;">Please verify your email</h2>
+            
+            <p style="font-size:15px; color:#555;">
+              Use the verification code below to complete your signup:
+            </p>
+            
+            <div style="
+              margin:30px 0;
+              font-size:28px;
+              font-weight:bold;
+              letter-spacing:4px;
+              color:#0057FF;
+            ">
+              ${otp}
+            </div>
+            
+            <p style="font-size:13px; color:#888;">
+              This code will expire in 5 minutes.
+            </p>
+            
+          </div>
+        </div>
+      `,
+    });
+
+    console.log("OTP sent successfully.");
+  } catch (error) {
+    console.error("Error sending OTP:", error);
+    throw error;
+  }
 }
 
 async function register(req, res) {
@@ -24,14 +56,14 @@ async function register(req, res) {
         RETURNING id, firstname, lastname, email
         `;
     const otpn = nanoid(5);
-    const values = [firstname, lastname, email, hashedpass,otpn];
+    const values = [firstname, lastname, email, hashedpass, otpn];
     const { rows } = await pgdb.query(query, values);
     const user = rows[0];
     const payload = { id: user.id, email: user.email };
     const refreshToken = jwt.sign(payload, process.env.Refresh_secret_key, {
       expiresIn: "7d",
     });
-    sendOtp(email,otpn);
+    sendOtp(email, otpn);
     const uquery = `update users set refreshToken=$1 where email=$2`;
     const row1 = await pgdb.query(uquery, [refreshToken, user.email]);
     return res
@@ -57,30 +89,28 @@ async function register(req, res) {
   }
 }
 
-async function verifyOtp(req,res) {
+async function verifyOtp(req, res) {
   try {
-    const {email,otp} = req.body;
+    const { email, otp } = req.body;
     const query = `SELECT id, firstname, lastname, email, otp FROM users WHERE email = $1`;
     const { rows } = await pgdb.query(query, [email]);
     const user = rows[0];
 
     if (!user) {
-      return res.status(404).json({err:"User not found"});
+      return res.status(404).json({ err: "User not found" });
     }
 
     if (user.otp === otp) {
       const q1 = `UPDATE users SET status = $1 WHERE email = $2 RETURNING id, firstname`;
       const { rows: updatedRows } = await pgdb.query(q1, ["VERIFIED", email]);
-      return res.status(200).json({success:"Successfully verified"});
+      return res.status(200).json({ success: "Successfully verified" });
     } else {
-      return res.status(404).json({err:"Invalid OTP"});
+      return res.status(404).json({ err: "Invalid OTP" });
     }
   } catch (err) {
     console.error("Error verifying OTP:", err.message);
   }
 }
-
-
 
 async function login(req, res) {
   try {
@@ -94,8 +124,8 @@ async function login(req, res) {
     }
 
     const user = rows[0];
-    if(user.status=='UNVERIFIED'){
-      return res.status(404).json({error:"User is not verified"})
+    if (user.status == "UNVERIFIED") {
+      return res.status(404).json({ error: "User is not verified" });
     }
     const matching = await bcrypt.compare(password, user.password);
     if (!matching) {
@@ -158,5 +188,5 @@ module.exports = {
   register,
   login,
   forgetpass,
-  verifyOtp
+  verifyOtp,
 };
