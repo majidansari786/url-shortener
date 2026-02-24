@@ -1,4 +1,3 @@
-const shortenedModel = require("../models/shortened");
 const QRCode = require("qrcode");
 const { nanoid } = require("nanoid");
 const pgdb = require("../config/db");
@@ -62,6 +61,10 @@ async function qrgen(req, res) {
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
+}
+
+async function bulk_shorten(req,res) {
+  const { url } = req.body; 
 }
 
 module.exports = {

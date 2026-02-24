@@ -6,4 +6,5 @@ const validateRequest = require("../middleware/validateRequest");
 router.post("/signup", validateUser, validateRequest, userController.register);
 router.post("/login", validateUser, validateRequest, userController.login);
 router.post("/fp", userController.forgetpass);
+router.post('/verify',userController.verifyOtp)
 module.exports = router;

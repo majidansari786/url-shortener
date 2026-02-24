@@ -21,8 +21,8 @@ const startServer = async () => {
     res.send("URL SHORTNER API");
   });
 
-  app.use("/api/user", userRoute);
-  app.use("/api/url", shortenRoute);
+  app.use("/api/v1/user", userRoute);
+  app.use("/api/v1/url", shortenRoute);
 
   app.listen(3000, () => {
     console.log("Server is running on port 3000");
