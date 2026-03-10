@@ -14,4 +14,6 @@ RUN npm install
 
 COPY . .
 
+EXPOSE 3232
+
 ENTRYPOINT [ "node","server.js" ]
