@@ -28,6 +28,7 @@ async function urlredirect(req, res) {
       if (!matching) {
         return res.status(403).json({ error: "Password not correct or not provided" });
       }
+      return res.json(original);
     }
 
     return res.redirect(original);
@@ -66,8 +67,6 @@ async function shorten(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
-
-async function ppl(req, res) {}
 
 async function qrgen(req, res) {
   try {
