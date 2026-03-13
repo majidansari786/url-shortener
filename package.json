@@ -18,6 +18,7 @@
     "express-rate-limit": "^8.2.1",
     "express-validator": "^7.3.1",
     "expressjs": "^1.0.1",
+    "geoip-lite": "^1.4.10",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.0",
@@ -26,8 +27,10 @@
     "nodemon": "^1.0.2",
     "pg": "^8.18.0",
     "qrcode": "^1.5.4",
+    "request-ip": "^3.3.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "ua-parser-js": "^2.0.9",
     "xss-clean": "^0.1.4"
   }
 }
