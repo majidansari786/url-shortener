@@ -26,6 +26,7 @@
     "nodemailer": "^8.0.1",
     "nodemon": "^1.0.2",
     "pg": "^8.18.0",
+    "prom-client": "^15.1.3",
     "qrcode": "^1.5.4",
     "request-ip": "^3.3.0",
     "swagger-jsdoc": "^6.2.8",

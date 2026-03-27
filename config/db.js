@@ -11,7 +11,7 @@ const pool = new Pool({
   database: "college",
   password: process.env.Db_pass,
   port: 5432,
-  max: 20, // max connections
+  max: 50, // max connections
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });

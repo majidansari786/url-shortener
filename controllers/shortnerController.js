@@ -5,6 +5,8 @@ const bcrypt = require("bcrypt");
 const UAParser = require("ua-parser-js");
 const geoip = require("geoip-lite");
 
+const { shortenCounter, redirectCounter } = require("../metrics");
+
 async function urlredirect(req, res) {
   try {
     const { code } = req.params;
@@ -23,25 +25,24 @@ async function urlredirect(req, res) {
     const { rows } = await pgdb.query(query, [code]);
 
     if (rows.length === 0) {
+      redirectCounter.inc(); // optional: count failed
       return res.status(404).json({ error: "Short URL not found" });
     }
 
-    const insertClick = `
-      INSERT INTO clicks
+    await pgdb.query(
+      `INSERT INTO clicks
       (short_code, ip_address, country, browser, device, os, referrer)
-      VALUES ($1,$2,$3,$4,$5,$6,$7)
-      RETURNING id
-    `;
-
-    await pgdb.query(insertClick, [
-      code,
-      req.ip,
-      geo?.country || "Unknown",
-      parser.getBrowser().name,
-      parser.getDevice().type || "desktop",
-      parser.getOS().name,
-      req.get("Referrer") || "direct",
-    ]);
+      VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [
+        code,
+        req.ip,
+        geo?.country || "Unknown",
+        parser.getBrowser().name,
+        parser.getDevice().type || "desktop",
+        parser.getOS().name,
+        req.get("Referrer") || "direct",
+      ]
+    );
 
     const { original, pass } = rows[0];
 
@@ -49,15 +50,19 @@ async function urlredirect(req, res) {
       const matching = await bcrypt.compare(password, pass);
 
       if (!matching) {
+        redirectCounter.inc(); // failed attempt
         return res
           .status(403)
           .json({ error: "Password not correct or not provided" });
       }
 
+      redirectCounter.inc(); // success
       return res.json({ url: original });
     }
 
+    redirectCounter.inc(); // success
     return res.redirect(original);
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Server error" });
@@ -67,32 +72,29 @@ async function urlredirect(req, res) {
 async function shorten(req, res) {
   try {
     const { url, custom_short, email, password } = req.body;
+    const userEmail = email || "null@majid.com"
+    const shortenedUrl = custom_short || nanoid(5);
+
     if (!password) {
-      const shortenedUrl = custom_short || nanoid(5);
-      const query = `insert into shorten(original,shortcode,created_by) values($1,$2,$3) RETURNING id,original,shortcode,created_by`;
-      const { rows } = await pgdb.query(query, [url, shortenedUrl, email]);
-      return res.json({
-        shortenedUrl,
-      });
-    } else {
-      try {
-        const { url, custom_short, email, password } = req.body;
-        const hashedpass = await bcrypt.hash(password, 10);
-        const shortenedUrl = custom_short || nanoid(5);
-        const query = `insert into shorten(original,shortcode,created_by,pass) values($1,$2,$3,$4) RETURNING id,original,shortcode,created_by`;
-        const { rows } = await pgdb.query(query, [
-          url,
-          shortenedUrl,
-          email,
-          hashedpass,
-        ]);
-        return res.json({
-          shortenedUrl,
-        });
-      } catch (err) {
-        return res.status(500).json({ error: err.message });
-      }
+      await pgdb.query(
+        `insert into shorten(original,shortcode,created_by) values($1,$2,$3)`,
+        [url, shortenedUrl, userEmail]
+      );
+
+      shortenCounter.inc();
+      return res.json({ shortenedUrl });
     }
+
+    const hashedpass = await bcrypt.hash(password, 10);
+
+    await pgdb.query(
+      `insert into shorten(original,shortcode,created_by,pass) values($1,$2,$3,$4)`,
+      [url, shortenedUrl, userEmail, hashedpass]
+    );
+
+    shortenCounter.inc();
+    return res.json({ shortenedUrl });
+
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -106,10 +108,6 @@ async function qrgen(req, res) {
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-}
-
-async function bulk_shorten(req, res) {
-  const { url } = req.body;
 }
 
 module.exports = {
